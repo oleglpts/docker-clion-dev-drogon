@@ -1,0 +1,13 @@
+services:
+  gdbserver:
+    image: docker_clion_dev:latest
+    security_opt: # options needed for gdb debugging
+      - seccomp:unconfined
+      - apparmor:unconfined
+    container_name: debug
+    ports:
+      - "7776:22"
+      - "7777:7777"
+    volumes:
+      - .:/code
+

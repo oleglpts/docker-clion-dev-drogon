@@ -1,0 +1,76 @@
+--- trantor/trantor/utils/Logger.h
++++ trantor/trantor/utils/Logger.h
+@@ -22,6 +22,8 @@
+ #include <functional>
+ #include <iostream>
+ #include <vector>
++#include <nlohmann/json.hpp>
++using json = nlohmann::json;
+ namespace spdlog
+ {
+ class logger;
+@@ -96,9 +98,12 @@
+         int size_;
+     };
+     Logger(SourceFile file, int line);
++    Logger(SourceFile file, int line, json message);
+     Logger(SourceFile file, int line, LogLevel level);
++    Logger(SourceFile file, int line, LogLevel level, json message);
+     Logger(SourceFile file, int line, bool isSysErr);
+     Logger(SourceFile file, int line, LogLevel level, const char *func);
++    Logger(SourceFile file, int line, LogLevel level, const char *func, json message);
+ 
+     // LOG_COMPACT only <time><ThreadID><Level>
+     Logger();
+@@ -272,6 +277,7 @@
+     {
+         fflush(stdout);
+     }
++    std::string getTimestamp();
+     void formatTime();
+     static bool &displayLocalTime_()
+     {
+@@ -336,6 +342,7 @@
+     int fileLine_;
+     LogLevel level_;
+     int index_{-1};
++    bool fileOut_ {true};
+     const char *func_{nullptr};
+     std::size_t spdLogMessageOffset_{0};
+ };
+@@ -378,6 +385,10 @@
+ #define LOG_DEBUG                                                          \
+     TRANTOR_IF_(trantor::Logger::logLevel() <= trantor::Logger::kDebug)    \
+     trantor::Logger(__FILE__, __LINE__, trantor::Logger::kDebug, __func__) \
++        .stream()
++#define JLOG_DEBUG(message)                                                \
++    TRANTOR_IF_(trantor::Logger::logLevel() <= trantor::Logger::kDebug)    \
++    trantor::Logger(__FILE__, __LINE__, trantor::Logger::kDebug, __func__, message) \
+         .stream()
+ #define LOG_DEBUG_TO(index)                                                \
+     TRANTOR_IF_(trantor::Logger::logLevel() <= trantor::Logger::kDebug)    \
+@@ -387,17 +398,24 @@
+ #define LOG_INFO                                                       \
+     TRANTOR_IF_(trantor::Logger::logLevel() <= trantor::Logger::kInfo) \
+     trantor::Logger(__FILE__, __LINE__).stream()
++#define JLOG_INFO(message)                                                       \
++    TRANTOR_IF_(trantor::Logger::logLevel() <= trantor::Logger::kInfo) \
++    trantor::Logger(__FILE__, __LINE__, message).stream()
+ #define LOG_INFO_TO(index)                                             \
+     TRANTOR_IF_(trantor::Logger::logLevel() <= trantor::Logger::kInfo) \
+     trantor::Logger(__FILE__, __LINE__).setIndex(index).stream()
+ #define LOG_WARN \
+     trantor::Logger(__FILE__, __LINE__, trantor::Logger::kWarn).stream()
++#define JLOG_WARN(message) \
++    trantor::Logger(__FILE__, __LINE__, trantor::Logger::kWarn, message).stream()
+ #define LOG_WARN_TO(index)                                      \
+     trantor::Logger(__FILE__, __LINE__, trantor::Logger::kWarn) \
+         .setIndex(index)                                        \
+         .stream()
+ #define LOG_ERROR \
+     trantor::Logger(__FILE__, __LINE__, trantor::Logger::kError).stream()
++#define JLOG_ERROR(message) \
++    trantor::Logger(__FILE__, __LINE__, trantor::Logger::kError, message).stream()
+ #define LOG_ERROR_TO(index)                                      \
+     trantor::Logger(__FILE__, __LINE__, trantor::Logger::kError) \
+         .setIndex(index)                                         \

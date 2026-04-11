@@ -1,0 +1,124 @@
+--- trantor/trantor/utils/Logger.cc
++++ trantor/trantor/utils/Logger.cc
+@@ -101,6 +101,12 @@
+ #endif
+ //   static thread_local LogStream logStream_;
+ 
++std::string Logger::getTimestamp() {
++    std::string result;
++    result += date_.toCustomFormattedString("%Y-%m-%dT%H:%M:%S", true) + "Z";
++    return result;
++}
++
+ void Logger::formatTime()
+ {
+     uint64_t now = static_cast<uint64_t>(date_.secondsSinceEpoch());
+@@ -197,6 +203,10 @@
+     " FATAL ",
+ };
+ 
++static const char *logLevelStrTrim[Logger::LogLevel::kNumberOfLogLevels] = {
++        "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"
++};
++
+ Logger::Logger(SourceFile file, int line)
+     : sourceFile_(file), fileLine_(line), level_(kInfo)
+ {
+@@ -205,6 +215,22 @@
+ #ifdef TRANTOR_SPDLOG_SUPPORT
+     spdLogMessageOffset_ = logStream_.bufferLength();
+ #endif
++}
++Logger::Logger(SourceFile file, int line, json message)
++        : sourceFile_(file), fileLine_(line), level_(kInfo)
++{
++    message["level"] = logLevelStrTrim[level_];
++    message["timestamp"] = getTimestamp();
++    if (file.data_) {
++        LogStream link;
++        link << sourceFile_ << ':' << fileLine_;
++        message["file"] = link.bufferData();
++    }
++    logStream_ << message.dump();
++    fileOut_ = false;
++#ifdef TRANTOR_SPDLOG_SUPPORT
++    spdLogMessageOffset_ = logStream_.bufferLength();
++#endif
+ }
+ Logger::Logger(SourceFile file, int line, LogLevel level)
+     : sourceFile_(file),
+@@ -217,6 +243,24 @@
+     spdLogMessageOffset_ = logStream_.bufferLength();
+ #endif
+ }
++Logger::Logger(SourceFile file, int line, LogLevel level, json message)
++        : sourceFile_(file),
++          fileLine_(line),
++          level_(std::clamp(level, kTrace, kFatal))
++{
++    message["level"] = logLevelStrTrim[level_];
++    message["timestamp"] = getTimestamp();
++    if (file.data_) {
++        LogStream link;
++        link << sourceFile_ << ':' << fileLine_;
++        message["file"] = link.bufferData();
++    }
++    logStream_ << message.dump();
++    fileOut_ = false;
++#ifdef TRANTOR_SPDLOG_SUPPORT
++    spdLogMessageOffset_ = logStream_.bufferLength();
++#endif
++}
+ Logger::Logger(SourceFile file, int line, LogLevel level, const char *func)
+     : sourceFile_(file),
+       fileLine_(line),
+@@ -232,6 +276,31 @@
+     spdLogMessageOffset_ = logStream_.bufferLength();
+ #endif
+ }
++Logger::Logger(SourceFile file, int line, LogLevel level, const char *func, json message)
++        : sourceFile_(file),
++          fileLine_(line),
++          level_(std::clamp(level, kTrace, kFatal))
++#ifdef TRANTOR_SPDLOG_SUPPORT
++,
++      func_(func)
++#endif
++{
++    message["level"] = logLevelStrTrim[level_];
++    message["timestamp"] = getTimestamp();
++    if (file.data_) {
++        LogStream link;
++        link << sourceFile_ << ':' << fileLine_;
++        message["file"] = link.bufferData();
++    }
++    if (func) {
++        message["func"] = func;
++    }
++    logStream_ << message.dump();
++    fileOut_ = false;
++#ifdef TRANTOR_SPDLOG_SUPPORT
++    spdLogMessageOffset_ = logStream_.bufferLength();
++#endif
++}
+ Logger::Logger(SourceFile file, int line, bool)
+     : sourceFile_(file), fileLine_(line), level_(kFatal)
+ {
+@@ -476,7 +545,7 @@
+         return;
+     }
+ #endif  // TRANTOR_SPDLOG_SUPPORT
+-    if (sourceFile_.data_)
++    if (sourceFile_.data_ && fileOut_)
+         logStream_ << T(" - ", 3) << sourceFile_ << ':' << fileLine_ << '\n';
+     else
+         logStream_ << '\n';
+@@ -498,6 +567,8 @@
+         if (level_ >= kError)
+             Logger::flushFunc_(index_)();
+     }
++    if (!fileOut_)
++        Logger::flushFunc_()();
+ }
+ LogStream &Logger::stream()
+ {
