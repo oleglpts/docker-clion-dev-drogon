@@ -37,7 +37,7 @@ RUN mkdir /home/drogon/.ssh && chmod 0700 /home/drogon/.ssh && apk add shadow &&
 ########################################################
 
 RUN apk add --no-cache rabbitmq-c-dev openssl-dev git curl curl-dev hiredis-dev expat expat-dev \
-    util-linux-dev postgresql-dev sqlite-libs asio-dev crypto++-dev && apk upgrade sqlite-libs && \
+    util-linux-dev postgresql-dev sqlite-libs asio-dev crypto++-dev ossp-uuid libuuid && apk upgrade sqlite-libs && \
     git clone https://github.com/jpbarrette/curlpp.git && cd curlpp && cmake . && \
     make CXXFLAGS="-std=c++20 -Wall -O2" && make install && cd .. && \
     curl https://codeload.github.com/jtv/libpqxx/tar.gz/refs/tags/7.9.2 --output 7.9.2.tar.gz && \
