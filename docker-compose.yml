@@ -4,7 +4,7 @@ services:
     security_opt: # options needed for gdb debugging
       - seccomp:unconfined
       - apparmor:unconfined
-    container_name: debug
+    container_name: debug_clion_dev
     ports:
       - "7776:22"
       - "7777:7777"
