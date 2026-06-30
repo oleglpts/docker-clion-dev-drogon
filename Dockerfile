@@ -1,6 +1,6 @@
-ARG alpine_version=3.23.0
-ARG drogon_version=1.9.11
-ARG trantor_version=1.5.24
+ARG alpine_version=3.24.1
+ARG drogon_version=1.9.13
+ARG trantor_version=1.5.28
 ARG revision=1
 
 FROM slacktomcat/alpine_drogon:${alpine_version}-${drogon_version}-${trantor_version}-${revision}-pgsql-redis
